@@ -41,8 +41,8 @@ def dcn_model_fn(features, labels, mode, params):
   head = head_lib._binary_logistic_or_multi_class_head(  # pylint: disable=protected-access
                   n_classes=2, weight_column=None, label_vocabulary=None, loss_reduction=losses.Reduction.SUM)
   logits = tf.layers.dense(last_layer, units=head.logits_dimension, kernel_initializer=tf.glorot_uniform_initializer())
-  #optimizer = tf.train.AdagradOptimizer(learning_rate=params['learning_rate'])
-  optimizer = tf.contrib.opt.GGTOptimizer(learning_rate=params['learning_rate'])
+  optimizer = tf.train.AdagradOptimizer(learning_rate=params['learning_rate'])
+  #optimizer = tf.contrib.opt.GGTOptimizer(learning_rate=params['learning_rate'])
   preds = tf.sigmoid(logits)
   user_id = features['user_id']
   label = features['label']
