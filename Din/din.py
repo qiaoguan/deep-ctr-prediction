@@ -62,16 +62,13 @@ def attention_layer(querys, keys):
     net = tf.concat([keys, keys - querys, querys, keys*querys], axis=-1)
     for units in [32,16]:
       net = tf.layers.dense(net, units=units, activation=tf.nn.relu)
-    att_wgt = tf.layers.dense(net, units=1, activation=tf.sigmoid)        # shape(batch_size, max_seq_len, 1)
-    att_wgt = tf.reshape(att_wgt, shape=[-1, keys_length, 1], name="weight")
-    wgt_emb = tf.multiply(keys, att_wgt)  # shape(batch_size, max_seq_len, embedding_size)
-    """
-    #masks = tf.sequence_mask(seq_len, max_seq_len, dtype=tf.float32)
-    masks = tf.expand_dims(tf.cast(seq_ids >= 0, tf.float32), axis=-1)   # shape(batch_size, max_seq_len, 1)
-    att_emb = tf.reduce_sum(tf.multiply(wgt_emb, masks), 1, name="weighted_embedding")#shape(batch_size,embedding_size)
-    """
-    attention_emb = tf.reduce_sum(wgt_emb, 1, name="attention_embedding")
-    return attention_emb #, tf.reshape(tid_emb, shape=[-1, embedding_size])
+    att_wgt = tf.layers.dense(net, units=1, activation=tf.sigmoid)        # shape(batch_size, N, 1)
+    outputs = tf.reshape(att_wgt, shape=[-1, 1, keys_length], name="weight")  #shape(batch_size, 1, N)
+    outputs = outputs / (embedding_size ** 0.5)
+    outputs = tf.nn.softmax(outputs)
+    outputs = tf.matmul(outputs, keys)  # (batch_size, 1, embedding_size)
+    outputs = tf.reduce_sum(outputs, 1, name="attention_embedding")   #(batch_size, embedding_size)
+    return outputs
 
 def varlen_attention_layer(seq_ids, tid, id_type):
     with tf.variable_scope("attention_" + id_type):
