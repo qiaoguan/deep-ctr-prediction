@@ -42,7 +42,7 @@ def esmm_model_fn(features, labels, mode, params):
     predictions = {
       'ctr_preds': ctr_preds,
       'cvr_preds': cvr_preds,
-      'ctcvr_preds': ctcvr_preds
+      'ctcvr_preds': ctcvr_preds,
       'user_id': user_id,
       'click_label': click_label,
       'conversion_label': conversion_label
