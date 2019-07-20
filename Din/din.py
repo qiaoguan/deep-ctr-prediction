@@ -64,10 +64,18 @@ def attention_layer(querys, keys):
       net = tf.layers.dense(net, units=units, activation=tf.nn.relu)
     att_wgt = tf.layers.dense(net, units=1, activation=tf.sigmoid)        # shape(batch_size, N, 1)
     outputs = tf.reshape(att_wgt, shape=[-1, 1, keys_length], name="weight")  #shape(batch_size, 1, N)
-    outputs = outputs / (embedding_size ** 0.5)
-    outputs = tf.nn.softmax(outputs)
-    outputs = tf.matmul(outputs, keys)  # (batch_size, 1, embedding_size)
+    
+    scores = outputs
+    key_masks = tf.expand_dims(tf.cast(keys_id > 0, tf.bool), axis=1)  # shape(batch_size, 1, max_seq_len) we add 0 as padding
+    # tf.not_equal(keys_id, '0')  如果改成str
+    #key_masks = tf.expand_dims(tf.not_equal(keys_id, '0'), axis=1)
+    paddings = tf.ones_like(scores) * (-2 ** 32 + 1)
+    scores = tf.where(key_masks, scores, paddings)
+    scores = scores / (embedding_size ** 0.5)       # scale
+    scores = tf.nn.softmax(scores)
+    outputs = tf.matmul(scores, keys)    #(batch_size, 1, embedding_size)
     outputs = tf.reduce_sum(outputs, 1, name="attention_embedding")   #(batch_size, embedding_size)
+    
     return outputs
 
 def varlen_attention_layer(seq_ids, tid, id_type):
