@@ -10,10 +10,9 @@ def build_deep_layers(net, params):
     # Build the hidden layers, sized according to the 'hidden_units' param.
 
     for layer_id, num_hidden_units in enumerate(params['hidden_units']):
-        # net = tf.layers.dense(net, units=num_hidden_units, activation=tf.nn.relu, kernel_initializer=tf.glorot_uniform_initializer())
-        net = tf.layers.dense(net, units=num_hidden_units, activation=None,
+        net = tf.layers.dense(net, units=num_hidden_units, activation=tf.nn.relu,
                               kernel_initializer=tf.glorot_uniform_initializer())
-        net = dice(net, name='dice_' + str(layer_id))
+
     return net
 
 
@@ -47,28 +46,28 @@ def cross_layer(x0, x, name):
         xb = tf.tensordot(tf.reshape(x, [-1, 1, input_dim]), w, 1)
         return x0 * xb + b + x
 
-def attention_layer(querys, keys):
+def attention_layer(querys, keys, keys_id):
     """
         queries:     [Batchsize, 1, embedding_size]
-        keys:        [Batchsize, N, embedding_size]  N is the number of keys(e.g. number of keyword for each sample)
+        keys:        [Batchsize, max_seq_len, embedding_size]  max_seq_len is the number of keys(e.g. number of clicked creativeid for each sample)
+        keys_id:     [Batchsize, max_seq_len]
     """
 
     keys_length = tf.shape(keys)[1] # padded_dim
     embedding_size = querys.get_shape().as_list()[-1]
     keys = tf.reshape(keys, shape=[-1, keys_length, embedding_size])
     querys = tf.reshape(tf.tile(querys, [1, keys_length, 1]), shape=[-1, keys_length, embedding_size])
-    #print(querys)
-    #print(keys)
+
     net = tf.concat([keys, keys - querys, querys, keys*querys], axis=-1)
     for units in [32,16]:
       net = tf.layers.dense(net, units=units, activation=tf.nn.relu)
-    att_wgt = tf.layers.dense(net, units=1, activation=tf.sigmoid)        # shape(batch_size, N, 1)
-    outputs = tf.reshape(att_wgt, shape=[-1, 1, keys_length], name="weight")  #shape(batch_size, 1, N)
+    att_wgt = tf.layers.dense(net, units=1, activation=tf.sigmoid)        # shape(batch_size, max_seq_len, 1)
+    outputs = tf.reshape(att_wgt, shape=[-1, 1, keys_length], name="weight")  #shape(batch_size, 1, max_seq_len)
     
     scores = outputs
-    key_masks = tf.expand_dims(tf.cast(keys_id > 0, tf.bool), axis=1)  # shape(batch_size, 1, max_seq_len) we add 0 as padding
+    #key_masks = tf.expand_dims(tf.cast(keys_id > 0, tf.bool), axis=1)  # shape(batch_size, 1, max_seq_len) we add 0 as padding
     # tf.not_equal(keys_id, '0')  如果改成str
-    #key_masks = tf.expand_dims(tf.not_equal(keys_id, '0'), axis=1)
+    key_masks = tf.expand_dims(tf.not_equal(keys_id, '0'), axis=1)
     paddings = tf.ones_like(scores) * (-2 ** 32 + 1)
     scores = tf.where(key_masks, scores, paddings)
     scores = scores / (embedding_size ** 0.5)       # scale
@@ -78,73 +77,33 @@ def attention_layer(querys, keys):
     
     return outputs
 
-def varlen_attention_layer(seq_ids, tid, id_type):
-    with tf.variable_scope("attention_" + id_type):
-      """
-      embedding_size = self._params["embedding_size"][id_type]
-      embeddings = tf.get_variable(name="embeddings", dtype=tf.float32,
-                                   shape=[self._params["vocab_size"][id_type], embedding_size])
-      """
-      embedding_size = 15
-      embeddings = tf.get_variable(name="embeddings", dtype=tf.float32,
-                                   shape=[500000, embedding_size])
-      seq_emb = tf.nn.embedding_lookup(embeddings, seq_ids.indices)  # shape(batch_size, max_seq_len, embedding_size)
-      #seq_emb = tf.nn.embedding_lookup_sparse(embeddings, seq_ids, sp_weights=None)
-      #tid_emb = tf.nn.embedding_lookup(embeddings, tid)  # shape(batch_size, embedding_size)
-
-      embeddings1 = tf.get_variable(name="embeddings1", dtype=tf.float32,
-                                   shape=[200000, embedding_size])
-      tid_emb = tf.nn.embedding_lookup(embeddings1, tid)      # shape(batch_size, embedding_size)
-
-      max_seq_len = tf.shape(seq_ids)[1] # padded_dim
-
-
-      print('=============================')
-      print(seq_ids)
-      print(tid)
-      print(seq_emb)
-      print(tid_emb)
-      print(max_seq_len)
-      print("=============================")
-      
-      u_emb = tf.reshape(seq_emb, shape=[-1, max_seq_len, embedding_size])
-      a_emb = tf.reshape(tf.tile(tid_emb, [1, 1, max_seq_len]), shape=[-1, max_seq_len, embedding_size])
-      net = tf.concat([u_emb, u_emb - a_emb, a_emb], axis=1)
-      for units in [32,16]:
-        net = tf.layers.dense(net, units=units, activation=tf.nn.relu)
-      att_wgt = tf.layers.dense(net, units=1, activation=tf.sigmoid)        # shape(batch_size, max_seq_len, 1)
-      att_wgt = tf.reshape(att_wgt, shape=[-1, max_seq_len, 1], name="weight")
-      wgt_emb = tf.multiply(seq_emb, att_wgt)  # shape(batch_size, max_seq_len, embedding_size)
-      #masks = tf.sequence_mask(seq_len, max_seq_len, dtype=tf.float32)
-      masks = tf.expand_dims(tf.cast(seq_ids >= 0, tf.float32), axis=-1)   # shape(batch_size, max_seq_len, 1)
-      att_emb = tf.reduce_sum(tf.multiply(wgt_emb, masks), 1, name="weighted_embedding")#shape(batch_size,embedding_size)
-      return att_emb, tf.reshape(tid_emb, shape=[-1, embedding_size])
-
 
 def din_model_fn(features, labels, mode, params):
     net = tf.feature_column.input_layer(features, params['feature_columns'])
 
-    attention_keyword = tf.string_to_hash_bucket_fast(features["keyword_attention"], 500000)
-    attention_keyword_embeddings = tf.get_variable(name="attention_keyword_embeddings", dtype=tf.float32,
-                                 shape=[500000, 20])
-    # shape(batch_size, len, embedding_size)
-    attention_keyword_emb =  tf.nn.embedding_lookup(attention_keyword_embeddings, attention_keyword)
+    last_click_creativeid = tf.string_to_hash_bucket_fast(features["user_click_creatives_att"], 200000)
+    creativeid_embeddings = tf.get_variable(name="attention_creativeid_embeddings", dtype=tf.float32,
+                                            shape=[200000, 20])
+    last_click_creativeid_emb = tf.nn.embedding_lookup(creativeid_embeddings, last_click_creativeid)
+    att_creativeid = tf.string_to_hash_bucket_fast(features["creative_id_att"], 200000)
+    creativeid_emb = tf.nn.embedding_lookup(creativeid_embeddings, att_creativeid)
 
+    creative_click_attention = attention_layer(creativeid_emb, last_click_creativeid_emb,
+                                                  features["user_click_creatives_att"])
 
-    attention_creativeid = tf.string_to_hash_bucket_fast(tf.as_string(features["creative_id"]), 200000)
-    attention_creativeid_embeddings = tf.get_variable(name="attention_creativeid_embeddings", dtype=tf.float32,
-                                 shape=[200000, 20])
-    # shape(batch_size, 1, embedding_size)
-    attention_creativeid_emb = tf.nn.embedding_lookup(attention_creativeid_embeddings, attention_creativeid)
-
-    keyword_creativeid_attention = attention_layer(attention_creativeid_emb,
-                                                   attention_keyword_emb)  # (batchsize,embedding_size)
-
+    last_click_productid = tf.string_to_hash_bucket_fast(features["user_click_products_att"], 40000)
+    productid_embeddings = tf.get_variable(name="attention_productid_embeddings", dtype=tf.float32,
+                                           shape=[40000, 20])
+    last_click_productid_emb = tf.nn.embedding_lookup(productid_embeddings, last_click_productid)
+    att_productid = tf.string_to_hash_bucket_fast(features["product_id_att"], 40000)
+    productid_emb = tf.nn.embedding_lookup(productid_embeddings, att_productid)
+    product_click_attention = attention_layer(productid_emb,
+                                                 last_click_productid_emb, features["user_click_products_att"])
 
     last_deep_layer = build_deep_layers(net, params)
     last_cross_layer = build_cross_layers(net, params)
 
-    last_layer = tf.concat([last_deep_layer, last_cross_layer, keyword_creativeid_attention], 1)
+    last_layer = tf.concat([last_deep_layer, last_cross_layer, creative_click_attention, product_click_attention], 1)
 
 
     # head = tf.contrib.estimator.binary_classification_head(loss_reduction=losses.Reduction.SUM)

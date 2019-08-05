@@ -47,7 +47,14 @@ def export_model(model, export_dir, model_column_fn):
   columns = model_column_fn
   columns.append(tf.feature_column.numeric_column("user_id", default_value=123456, dtype=tf.int64))
   columns.append(tf.feature_column.numeric_column("label", default_value=0, dtype=tf.int64))
+  other_feature_columns = {
+      "product_id_att": tf.FixedLenFeature(shape=[1], dtype=tf.string),
+      "creative_id_att": tf.FixedLenFeature(shape=[1], dtype=tf.string),
+      "user_click_products_att": tf.FixedLenFeature(shape=[10], dtype=tf.string),
+      "user_click_creatives_att": tf.FixedLenFeature(shape=[10], dtype=tf.string)
+  }
   feature_spec = tf.feature_column.make_parse_example_spec(columns)
+  feature_spec.update(other_feature_columns)
   example_input_fn = (
       tf.estimator.export.build_parsing_serving_input_receiver_fn(feature_spec))
   model.export_savedmodel(export_dir, example_input_fn)

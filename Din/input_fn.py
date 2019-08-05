@@ -11,7 +11,8 @@ FixedLenFeatureColumns=["label", "user_id", "creative_id", "has_target", "termin
 StringVarLenFeatureColumns = ["keyword"]  #特征长度不固定
 FloatFixedLenFeatureColumns = ['creative_history_ctr']
 StringFixedLenFeatureColumns = ["keyword_attention"]
-StringFeatureColumns = ["device_type", "device_model", "manufacturer"]
+StringFeatureColumns = ["device_type", "device_model", "manufacturer", "creative_id_att", "product_id_att"]
+AttFixedLenFeatureColumns = ["user_click_creatives_att", "user_click_products_att"]
 
 DayShowSegs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 37, 38, 39, 41, 42, 44, 46, 47, 49, 51, 54, 56, 59, 61, 65, 68, 72, 76, 81, 86, 92, 100, 109, 120, 134, 153, 184, 243, 1195]
 DayClickSegs = [1, 2, 3, 6, 23]
@@ -100,12 +101,16 @@ def feature_input_fn(data_file, num_epochs, shuffle, batch_size, labels=True):
     StringFeatures = {
         key: tf.FixedLenFeature(shape=[1], dtype=tf.string) for key in StringFeatureColumns
     }
+    AttFeatures = {
+        key: tf.FixedLenFeature(shape=[10], dtype=tf.string) for key in AttFixedLenFeatureColumns
+    }
     features={}
     features.update(FixedLenFeatures)
     features.update(StringVarLenFeatures)
     features.update(FloatFixedLenFeatures)
     features.update(StringFixedLenFeatures)
     features.update(StringFeatures)
+    features.update(AttFeatures)
     
     fea = tf.parse_example(value, features)
     feature = {
