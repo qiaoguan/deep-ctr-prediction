@@ -71,7 +71,7 @@ class TransformerNetwork(object):
                                              num_units=self.num_units,
                                              num_heads=self.num_heads,
                                              dropout_keep_prob=self.dropout_keep_prob,
-                                             causality=True,
+                                             causality=False,
                                              scope="self_attention")
 
                 # Feed forward
