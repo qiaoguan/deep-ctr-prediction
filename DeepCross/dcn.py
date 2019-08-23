@@ -7,7 +7,8 @@ def build_deep_layers(net, params):
   # Build the hidden layers, sized according to the 'hidden_units' param.
   
   for num_hidden_units in params['hidden_units']:
-    net = tf.layers.dense(net, units=num_hidden_units, activation=tf.nn.relu, kernel_initializer=tf.glorot_uniform_initializer())
+    net = tf.layers.dense(net, units=num_hidden_units, activation=tf.nn.relu,
+                          kernel_initializer=tf.glorot_uniform_initializer())
   return net
 
 
