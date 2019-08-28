@@ -4,23 +4,13 @@ from __future__ import division
 from __future__ import print_function
 import os
 import random
-from transformer import *
+from fibinet import *
 from input_fn import *
 from sklearn.metrics import roc_auc_score
 from metric import cal_group_auc, cross_entropy_loss
 import glob
 import numpy as np
 #os.environ['CUDA_VISIBLE_DEVICES'] = '3'  #指定用哪块GPU
-
-'''
-A tensorflow implementation of Transformer
-
-Ashish Vasmani et all.  "Attention is All You Need,"  In NIPS,2017.
-
-Qiwei et all. "Behavior Sequence Transformer for E-commerce Recommendation in Alibaba" In Arxiv 1905.06874
-
-@author: Qiao
-'''
 
 flags = tf.app.flags
 flags.DEFINE_string("model_dir", "./models", "Base directory for the model")
@@ -30,16 +20,13 @@ flags.DEFINE_integer("batch_size", 512, "Training batch size")
 flags.DEFINE_integer(name="num_epochs", short_name="ne", default=2, help="Training num epochs")
 flags.DEFINE_float("learning_rate", 0.03, "Learning rate")
 flags.DEFINE_string("hidden_units", "512,256,128", "number of units in each hidden layer for NN")
-flags.DEFINE_integer("num_cross_layers", 4, "Number of cross layers")
+flags.DEFINE_string("hidden_factor", "16,16", "Number of hidden factors")
 flags.DEFINE_integer("save_checkpoints_steps", 20000, "Save checkpoints every steps")
 flags.DEFINE_string("export_dir", "./exportmodels", "Path for exportmodels")
 flags.DEFINE_boolean(name="evaluate_only", short_name="eo", default=False, help="evaluate only flag")
-flags.DEFINE_boolean(name="use_cross", default=True, help="whether use cross layer")
 flags.DEFINE_integer("predict_steps", 100000, "predict_steps*batch_size samples to evaluate")
-flags.DEFINE_integer("transformer_num_units", 40, "embedding_size for transformer")
-flags.DEFINE_integer("num_blocks", 1, "the number of multi-head attention we use")
-flags.DEFINE_integer("num_heads", 8, "the number of heads for multi-head-attention")
-flags.DEFINE_float("dropout_rate", 0.0, "the number of dropout rate for transformer")
+flags.DEFINE_integer("reduction_ratio", 2, "reduction_ratio")
+flags.DEFINE_string("pooling", "max", "pooling type for senet layer")
 FLAGS = flags.FLAGS
 
 def export_model(model, export_dir, model_column_fn):
@@ -53,14 +40,7 @@ def export_model(model, export_dir, model_column_fn):
   columns = model_column_fn
   columns.append(tf.feature_column.numeric_column("user_id", default_value=123456, dtype=tf.int64))
   columns.append(tf.feature_column.numeric_column("label", default_value=0, dtype=tf.int64))
-  other_feature_columns = {
-      "product_id_att": tf.FixedLenFeature(shape=[1], dtype=tf.string),
-      "creative_id_att": tf.FixedLenFeature(shape=[1], dtype=tf.string),
-      "user_click_products_att": tf.FixedLenFeature(shape=[10], dtype=tf.string),
-      "user_click_creatives_att": tf.FixedLenFeature(shape=[10], dtype=tf.string)
-  }
   feature_spec = tf.feature_column.make_parse_example_spec(columns)
-  feature_spec.update(other_feature_columns)
   example_input_fn = (
       tf.estimator.export.build_parsing_serving_input_receiver_fn(feature_spec))
   model.export_savedmodel(export_dir, example_input_fn)
@@ -163,17 +143,14 @@ def main(unused_argv):
       model_dir=FLAGS.model_dir,session_config=session_config, log_step_count_steps=1000, save_summary_steps=20000, save_checkpoints_secs=1000)
 
   model = tf.estimator.Estimator(
-    model_fn=transformer_model_fn,
+    model_fn=fibinet_model_fn,
     params={
       'feature_columns': feature_columns,
       'hidden_units': FLAGS.hidden_units.split(','),
       'learning_rate': FLAGS.learning_rate,
-      'num_cross_layers': FLAGS.num_cross_layers,
-      'use_cross': FLAGS.num_cross_layers,
-      "transformer_num_units": FLAGS.transformer_num_units,
-      "num_blocks": FLAGS.num_blocks,
-      "num_heads": FLAGS.num_heads,
-      "dropout_rate": FLAGS.dropout_rate
+      'hidden_factor': FLAGS.hidden_factor.split(','),
+      'reduction_ratio': FLAGS.reduction_ratio,
+      'pooling': FLAGS.pooling
     },
     config = run_config
   )

@@ -4,7 +4,7 @@ from __future__ import division
 from __future__ import print_function
 import os
 import random
-from xdeepfm import *
+from afm import *
 from input_fn import *
 from sklearn.metrics import roc_auc_score
 from metric import cal_group_auc, cross_entropy_loss
@@ -141,7 +141,7 @@ def main(unused_argv):
       model_dir=FLAGS.model_dir,session_config=session_config, log_step_count_steps=1000, save_summary_steps=20000, save_checkpoints_secs=1000)
 
   model = tf.estimator.Estimator(
-    model_fn=din_model_fn,
+    model_fn=afm_model_fn,
     params={
       'feature_columns': feature_columns,
       'hidden_units': FLAGS.hidden_units.split(','),

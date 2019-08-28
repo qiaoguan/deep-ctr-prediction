@@ -154,7 +154,7 @@ def attention_layer(querys, keys, keys_id):
     return outputs
 
 
-def din_model_fn(features, labels, mode, params):
+def transformer_model_fn(features, labels, mode, params):
     net = tf.feature_column.input_layer(features, params['feature_columns'])
 
     last_click_creativeid = tf.string_to_hash_bucket_fast(features["user_click_creatives_att"], 200000)

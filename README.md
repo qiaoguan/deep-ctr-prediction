@@ -21,6 +21,8 @@ AFM(Attentional FM)
 
 Transformer
 
+FiBiNET
+
 代码使用tf.estimator构建, 数据存储为tfrecord格式(字典，key:value), 采用tf.Dataset API, 加快IO速度，支持工业级的应用。特征工程定义在input_fn,模型定义在model_fn,实现特征和模型代码分离,特征工程代码只用修改input_fn,模型代码只用修改model_fn。数据默认都是存在hadoop，可以根据自己需求存在本地, 特征工程和数据的处理可以参考Google开源的wide&deep模型(不使用tfrecord格式, 代码在official/wide_deep)
 
 参考文献
@@ -42,3 +44,5 @@ Transformer
 【8】Jun Xiao et all. "Attentional Factorization Machines: Learning the Weight of Feature Interactions via Attention Networks," In IJCAI, 2017.
 
 【9】Ashish Vasmani et all.  "Attention is All You Need,"  In NIPS, 2017.
+
+【10】Tongwen et all. "FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction," In RecSys, 2019.
