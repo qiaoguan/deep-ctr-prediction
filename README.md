@@ -3,29 +3,32 @@
 一些广告算法(CTR预估)相关的DNN模型
 
 
-wide&deep 可以参考official/wide_deep
+* wide&deep 可以参考official/wide_deep
 
-deep&cross
+* deep&cross
 
-deepfm
+* deepfm
 
-ESMM
+* ESMM
 
-Deep Interest Network
+* Deep Interest Network
 
-ResNet
+* ResNet
 
-xDeepFM
+* xDeepFM
 
-AFM(Attentional FM)
+* AFM(Attentional FM)
 
-Transformer
+* Transformer
 
-FiBiNET
+* FiBiNET
 
 代码使用tf.estimator构建, 数据存储为tfrecord格式(字典，key:value), 采用tf.Dataset API, 加快IO速度，支持工业级的应用。特征工程定义在input_fn,模型定义在model_fn,实现特征和模型代码分离,特征工程代码只用修改input_fn,模型代码只用修改model_fn。数据默认都是存在hadoop，可以根据自己需求存在本地, 特征工程和数据的处理可以参考Google开源的wide&deep模型(不使用tfrecord格式, 代码在official/wide_deep)
 
-参考文献
+# Requirements
+* Tensorflow 1.10
+
+# 参考文献
 
 【1】Heng-Tze Cheng, Levent Koc et all.   "Wide & Deep Learning for Recommender Systems,"   In 1st Workshop on Deep Learning for Recommender Systems,2016.
 
