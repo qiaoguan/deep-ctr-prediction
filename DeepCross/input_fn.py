@@ -13,7 +13,7 @@ FloatFixedLenFeatureColumns = ['creative_history_ctr']
 StringFixedLenFeatureColumns = ["keyword_attention"]
 StringFeatureColumns = ["device_type", "device_model", "manufacturer"]
 
-DayShowSegs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 37, 38, 39, 41, 42, 44, 46, 47, 49, 51, 54, 56, 59, 61, 65, 68, 72, 76, 81, 86, 92, 100, 109, 120, 134, 153, 184, 243, 1195]
+DayShowSegs = [1, 5, 8, 12, 18, 26, 54, 120, 250, 432, 823]
 DayClickSegs = [1, 2, 3, 6, 23]
 
 
