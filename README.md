@@ -25,6 +25,10 @@
 
 代码使用tf.estimator构建, 数据存储为tfrecord格式(字典，key:value), 采用tf.Dataset API, 加快IO速度，支持工业级的应用。特征工程定义在input_fn,模型定义在model_fn,实现特征和模型代码分离,特征工程代码只用修改input_fn,模型代码只用修改model_fn。数据默认都是存在hadoop，可以根据自己需求存在本地, 特征工程和数据的处理可以参考Google开源的wide&deep模型(不使用tfrecord格式, 代码在official/wide_deep)
 
+All codes are written based on tf.estimator API, the data is stored in tfrecord format(dictionary, key:value), and the tf.Dataset API is used to speed up IO speed, it support industrial applications. Feature engineering is defined in input_fn, model function is defined in model_fn, the related code of feature engineering and model function is completely separated,
+the data is stored in hadoop by default, and can be locally stored according to your 
+own need. The feature engineering and data processing can refer to Google's open source wide&deep model(without tfrecord format, codes are available at official/wide_deep)
+
 # Requirements
 * Tensorflow 1.10
 
