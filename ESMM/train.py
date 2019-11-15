@@ -174,7 +174,6 @@ def main(unused_argv):
       if FLAGS.evaluate_only == False:
           model.train(train_input_fn, steps=6000)
       print("*" * 100)
-      #results = model.evaluate(input_fn=eval_input_fn, steps=6000)
       model_predict(model,eval_input_fn,epoch)
 
 

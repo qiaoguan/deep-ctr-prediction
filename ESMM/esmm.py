@@ -50,9 +50,6 @@ def esmm_model_fn(features, labels, mode, params):
     }
     return tf.estimator.EstimatorSpec(mode, predictions=predictions, export_outputs=export_outputs)
 
-  elif mode == tf.estimator.ModeKeys.EVAL:
-    return tf.estimator.EstimatorSpec(mode, loss=loss)
-
   else:
     ctr_loss = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(labels=ctr_label, logits=ctr_logits))
     ctcvr_loss = tf.reduce_sum(tf.losses.log_loss(labels=cvr_label, predictions=ctcvr_preds))
