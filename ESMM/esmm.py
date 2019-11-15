@@ -30,9 +30,6 @@ def esmm_model_fn(features, labels, mode, params):
   optimizer = tf.train.AdagradOptimizer(learning_rate=params['learning_rate'])
   ctr_label = labels['ctr_label']
   cvr_label = labels['cvr_label']
-  ctr_loss = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(labels=ctr_label,logits=ctr_logits))
-  ctcvr_loss = tf.reduce_sum(tf.losses.log_loss(labels=cvr_label,predictions=ctcvr_preds))
-  loss = ctr_loss + ctcvr_loss    # loss这儿可以加一个参数，参考multi-task损失的方法
 
   user_id = features['user_id']
   click_label = features['label']
@@ -57,6 +54,10 @@ def esmm_model_fn(features, labels, mode, params):
     return tf.estimator.EstimatorSpec(mode, loss=loss)
 
   else:
+    ctr_loss = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(labels=ctr_label, logits=ctr_logits))
+    ctcvr_loss = tf.reduce_sum(tf.losses.log_loss(labels=cvr_label, predictions=ctcvr_preds))
+    loss = ctr_loss + ctcvr_loss  # loss这儿可以加一个参数，参考multi-task损失的方法
+
     train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
     return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op)
   """
